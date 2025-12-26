@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GitHub SEO Meta Generator</title>
+    <meta name="description" content="Generate SEO-friendly meta tags (Open Graph, Twitter cards, JSON-LD) for GitHub Pages." />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container">
+        <h1>GitHub SEO Meta Generator</h1>
+        <p class="lede">Fill in the basics; copy a ready-to-paste <code>&lt;head&gt;</code> snippet. Use Share link to save your form.</p>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="panel" aria-labelledby="form-title">
+        <h2 id="form-title">Inputs</h2>
+
+        <form id="seoForm" class="grid" autocomplete="off" spellcheck="false">
+          <label>
+            <span>Page title</span>
+            <input id="title" name="title" type="text" maxlength="80" placeholder="My project - fast, tiny, free" required />
+            <small class="hint"><span data-count-for="title">0</span>/60 recommended</small>
+          </label>
+
+          <label class="col-span">
+            <span>Description</span>
+            <textarea id="description" name="description" rows="3" maxlength="200" placeholder="One sentence that clearly explains what the page is." required></textarea>
+            <small class="hint"><span data-count-for="description">0</span>/160 recommended</small>
+          </label>
+
+          <label>
+            <span>Canonical URL</span>
+            <input id="canonical" name="canonical" type="url" placeholder="https://username.github.io/repo/" required />
+          </label>
+
+          <label>
+            <span>Site name</span>
+            <input id="siteName" name="siteName" type="text" maxlength="60" placeholder="My Site" />
+          </label>
+
+          <label>
+            <span>Social image URL</span>
+            <input id="ogImage" name="ogImage" type="url" placeholder="https://.../og.png" />
+            <small class="hint">1200x630 is a common safe default</small>
+          </label>
+
+          <label>
+            <span>Twitter handle</span>
+            <input id="twitter" name="twitter" type="text" placeholder="@handle" />
+          </label>
+
+          <label>
+            <span>Theme color</span>
+            <input id="themeColor" name="themeColor" type="text" inputmode="text" placeholder="#0b1020" />
+          </label>
+
+          <label>
+            <span>Language</span>
+            <input id="lang" name="lang" type="text" maxlength="12" placeholder="en" />
+          </label>
+
+          <div class="actions col-span">
+            <button type="button" id="btnExample">Load example</button>
+            <button type="button" id="btnShare">Share link</button>
+            <button type="reset" id="btnReset">Reset</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel" aria-labelledby="output-title">
+        <div class="row">
+          <h2 id="output-title">Generated</h2>
+          <div class="row-actions">
+            <button type="button" id="btnCopy">Copy</button>
+            <button type="button" id="btnDownload">Download template.html</button>
+          </div>
+        </div>
+
+        <p class="hint" id="status" aria-live="polite"></p>
+        <pre class="code"><code id="output"></code></pre>
+
+        <details class="extras">
+          <summary>Optional extras</summary>
+          <div class="extras-grid">
+            <div>
+              <h3>robots.txt</h3>
+              <pre class="code"><code id="robotsOut"></code></pre>
+            </div>
+            <div>
+              <h3>sitemap.xml</h3>
+              <pre class="code"><code id="sitemapOut"></code></pre>
+            </div>
+          </div>
+        </details>
+
+        <footer class="footnote">
+          <p>The share link stores form data in the URL hash (not sent to a server). If you include a private URL, you choose to share it.</p>
+        </footer>
+      </section>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
