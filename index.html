@@ -3,21 +3,38 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+
     <title>GitHub SEO Meta Generator</title>
     <meta name="description" content="Generate SEO-friendly meta tags (Open Graph, Twitter cards, JSON-LD) for GitHub Pages." />
+
+    <!-- Branding placeholders (drop your files into /assets) -->
+    <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="./assets/favicon.ico" sizes="any" />
+    <!-- Optional: add PNGs later -->
+    <!-- <link rel="icon" type="image/png" href="./assets/icon-32.png" sizes="32x32" /> -->
+    <!-- <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" sizes="180x180" /> -->
+
     <link rel="stylesheet" href="./styles.css" />
-    <link rel="icon" href="data:," />
   </head>
+
   <body>
     <header class="site-header">
       <div class="container">
-        <h1>GitHub SEO Meta Generator</h1>
-        <p class="lede">Fill in the basics; copy a ready-to-paste <code>&lt;head&gt;</code> snippet. Use Share link to save your form.</p>
+        <div class="brand">
+          <a class="brand-mark" href="./" aria-label="Home">
+            <img src="./assets/brand-mark.svg" width="44" height="44" alt="" />
+          </a>
+          <div class="brand-text">
+            <h1>GitHub SEO Meta Generator</h1>
+            <p class="lede">Fill in the basics; copy a ready-to-paste <code>&lt;head&gt;</code> snippet. Use Share link to save your form.</p>
+          </div>
+        </div>
       </div>
     </header>
 
-    <main class="container">
-      <section class="panel" aria-labelledby="form-title">
+    <main class="container layout">
+      <section class="panel panel--inputs" aria-labelledby="form-title">
         <h2 id="form-title">Inputs</h2>
 
         <form id="seoForm" class="grid" autocomplete="off" spellcheck="false">
@@ -72,7 +89,7 @@
         </form>
       </section>
 
-      <section class="panel" aria-labelledby="output-title">
+      <section class="panel panel--output" aria-labelledby="output-title">
         <div class="row">
           <h2 id="output-title">Generated</h2>
           <div class="row-actions">

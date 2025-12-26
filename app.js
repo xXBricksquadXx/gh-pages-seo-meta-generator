@@ -1,6 +1,5 @@
 import base64url from "./lib/base64url.js";
 
-const $ = (sel, root = document) => root.querySelector(sel);
 const byId = (id) => document.getElementById(id);
 
 const form = byId("seoForm");
@@ -15,43 +14,19 @@ const btnShare = byId("btnShare");
 const btnExample = byId("btnExample");
 const btnReset = byId("btnReset");
 
-if (!form || !out || !robotsOut || !sitemapOut || !statusEl) {
-  throw new Error("Required DOM nodes missing. Check index.html ids.");
-}
-
-const FIELD_IDS = [
-  "title",
-  "description",
-  "canonical",
-  "siteName",
-  "ogImage",
-  "twitter",
-  "themeColor",
-  "lang",
-];
-
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
-
 function cleanTwitter(handle) {
-  const h = String(handle ?? "").trim();
+  const h = String(handle || "").trim();
   if (!h) return "";
   return h.startsWith("@") ? h : `@${h}`;
 }
 
 function clampLang(lang) {
-  const l = String(lang ?? "").trim();
+  const l = String(lang || "").trim();
   return l || "en";
 }
 
 function normalizeUrl(url) {
-  const raw = String(url ?? "").trim();
+  const raw = String(url || "").trim();
   if (!raw) return "";
   try {
     return new URL(raw).toString();
@@ -60,20 +35,23 @@ function normalizeUrl(url) {
   }
 }
 
-function setStatus(msg) {
-  statusEl.textContent = msg || "";
+function escapeHtml(s) {
+  return String(s)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 }
 
-function countHint(id) {
-  const field = byId(id);
-  const counter = $(`[data-count-for="${id}"]`);
-  if (!field || !counter) return;
-  counter.textContent = String(field.value.length);
+function countHint(id, value) {
+  const el = document.querySelector(`[data-count-for="${id}"]`);
+  if (!el) return;
+  el.textContent = String(value.length);
 }
 
 function getData() {
   const fd = new FormData(form);
-
   return {
     title: String(fd.get("title") || "").trim(),
     description: String(fd.get("description") || "").trim(),
@@ -94,6 +72,7 @@ function toHeadSnippet(d) {
   if (d.canonical) lines.push(`<link rel="canonical" href="${escapeHtml(d.canonical)}" />`);
   if (d.themeColor) lines.push(`<meta name="theme-color" content="${escapeHtml(d.themeColor)}" />`);
 
+  // Open Graph
   lines.push(`<meta property="og:title" content="${escapeHtml(d.title)}" />`);
   lines.push(`<meta property="og:description" content="${escapeHtml(d.description)}" />`);
   if (d.canonical) lines.push(`<meta property="og:url" content="${escapeHtml(d.canonical)}" />`);
@@ -101,6 +80,7 @@ function toHeadSnippet(d) {
   lines.push(`<meta property="og:type" content="website" />`);
   if (d.ogImage) lines.push(`<meta property="og:image" content="${escapeHtml(d.ogImage)}" />`);
 
+  // Twitter
   const card = d.ogImage ? "summary_large_image" : "summary";
   lines.push(`<meta name="twitter:card" content="${card}" />`);
   if (d.twitter) lines.push(`<meta name="twitter:site" content="${escapeHtml(d.twitter)}" />`);
@@ -108,25 +88,18 @@ function toHeadSnippet(d) {
   lines.push(`<meta name="twitter:description" content="${escapeHtml(d.description)}" />`);
   if (d.ogImage) lines.push(`<meta name="twitter:image" content="${escapeHtml(d.ogImage)}" />`);
 
+  // JSON-LD
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
       { "@type": "WebSite", name: d.siteName || d.title, url: d.canonical || undefined },
-      {
-        "@type": "WebPage",
-        name: d.title,
-        description: d.description,
-        url: d.canonical || undefined,
-        inLanguage: d.lang,
-      },
+      { "@type": "WebPage", name: d.title, description: d.description, url: d.canonical || undefined, inLanguage: d.lang },
     ],
   };
 
   const cleaned = JSON.parse(JSON.stringify(jsonLd));
-  let json = JSON.stringify(cleaned);
-  json = json.replaceAll("</script", "<\\/script"); // avoid accidental tag close
+  lines.push(`<script type="application/ld+json">${JSON.stringify(cleaned)}</script>`);
 
-  lines.push(`<script type="application/ld+json">${json}</script>`);
   return lines.join("\n");
 }
 
@@ -137,11 +110,18 @@ function toRobotsTxt(d) {
 }
 
 function toSitemapXml(d) {
-  if (!d.canonical) {
-    return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url>\n    <loc>https://example.com/</loc>\n  </url>\n</urlset>\n`;
-  }
-  const loc = d.canonical.replace(/\/?$/, "/");
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url>\n    <loc>${escapeHtml(loc)}</loc>\n  </url>\n</urlset>\n`;
+  const loc = d.canonical ? d.canonical.replace(/\/?$/, "/") : "https://example.com/";
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>${escapeHtml(loc)}</loc>
+  </url>
+</urlset>
+`;
+}
+
+function setStatus(msg) {
+  statusEl.textContent = msg || "";
 }
 
 async function copyText(text) {
@@ -152,34 +132,14 @@ async function copyText(text) {
     const ta = document.createElement("textarea");
     ta.value = text;
     ta.setAttribute("readonly", "");
-    ta.style.position = "fixed";
+    ta.style.position = "absolute";
     ta.style.left = "-9999px";
-    ta.style.top = "0";
     document.body.appendChild(ta);
     ta.select();
     const ok = document.execCommand("copy");
     document.body.removeChild(ta);
     return ok;
   }
-}
-
-function applyData(d) {
-  if (!d || typeof d !== "object") return;
-
-  const set = (id, val) => {
-    const el = byId(id);
-    if (!el) return;
-    if (typeof val === "string") el.value = val;
-  };
-
-  set("title", d.title);
-  set("description", d.description);
-  set("canonical", d.canonical);
-  set("siteName", d.siteName);
-  set("ogImage", d.ogImage);
-  set("twitter", d.twitter);
-  set("themeColor", d.themeColor);
-  set("lang", d.lang);
 }
 
 function render() {
@@ -189,8 +149,8 @@ function render() {
   robotsOut.textContent = toRobotsTxt(d);
   sitemapOut.textContent = toSitemapXml(d);
 
-  countHint("title");
-  countHint("description");
+  countHint("title", d.title);
+  countHint("description", d.description);
 
   const warnings = [];
   if (d.title.length > 60) warnings.push("Title is over ~60 chars.");
@@ -199,17 +159,15 @@ function render() {
 }
 
 function loadExample() {
-  applyData({
-    title: "GitHub SEO Meta Generator — fast meta tags for Pages",
-    description:
-      "Generate SEO-friendly <head> tags (Open Graph, Twitter cards, JSON-LD) for GitHub Pages and copy them in one click.",
-    canonical: "https://username.github.io/repo/",
-    siteName: "username.github.io",
-    ogImage: "https://username.github.io/repo/og.png",
-    twitter: "@yourhandle",
-    themeColor: "#0b1020",
-    lang: "en",
-  });
+  byId("title").value = "GitHub SEO Meta Generator - generate meta tags fast";
+  byId("description").value =
+    "Generate SEO-friendly meta tags (Open Graph, Twitter cards, JSON-LD) for GitHub Pages and copy them in one click.";
+  byId("canonical").value = "https://username.github.io/repo/";
+  byId("siteName").value = "username.github.io";
+  byId("ogImage").value = "https://username.github.io/repo/og.png";
+  byId("twitter").value = "@yourhandle";
+  byId("themeColor").value = "#0b1020";
+  byId("lang").value = "en";
   render();
 }
 
@@ -229,41 +187,42 @@ function tryLoadFromHash() {
   try {
     const raw = base64url.decode(encoded);
     const payload = JSON.parse(raw);
-    if (!payload?.d) return false;
+    if (!payload || !payload.d) return false;
 
-    applyData(payload.d);
+    const d = payload.d;
+    if (typeof d.title === "string") byId("title").value = d.title;
+    if (typeof d.description === "string") byId("description").value = d.description;
+    if (typeof d.canonical === "string") byId("canonical").value = d.canonical;
+    if (typeof d.siteName === "string") byId("siteName").value = d.siteName;
+    if (typeof d.ogImage === "string") byId("ogImage").value = d.ogImage;
+    if (typeof d.twitter === "string") byId("twitter").value = d.twitter;
+    if (typeof d.themeColor === "string") byId("themeColor").value = d.themeColor;
+    if (typeof d.lang === "string") byId("lang").value = d.lang;
+
     return true;
   } catch {
     return false;
   }
 }
 
-/* ---------------- events ---------------- */
-
 form.addEventListener("input", render);
 
-form.addEventListener("reset", () => {
-  // after the browser resets form fields, re-render
-  window.location.hash = "";
-  setStatus("");
-  requestAnimationFrame(render);
-});
-
-btnCopy?.addEventListener("click", async () => {
+btnCopy.addEventListener("click", async () => {
   const ok = await copyText(out.textContent || "");
   setStatus(ok ? "Copied to clipboard." : "Copy failed.");
 });
 
-btnDownload?.addEventListener("click", () => {
+btnDownload.addEventListener("click", () => {
   const d = getData();
   const head = toHeadSnippet(d);
 
-  const template = `<!doctype html>
+  const template =
+`<!doctype html>
 <html lang="${escapeHtml(d.lang)}">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-${head.split("\n").map((l) => `    ${l}`).join("\n")}
+${head.split("\n").map((l) => "    " + l).join("\n")}
   </head>
   <body>
     <main>
@@ -282,16 +241,22 @@ ${head.split("\n").map((l) => `    ${l}`).join("\n")}
   URL.revokeObjectURL(a.href);
 });
 
-btnShare?.addEventListener("click", async () => {
+btnShare.addEventListener("click", async () => {
   const url = toShareUrl();
   window.location.hash = new URL(url).hash;
 
   const ok = await copyText(url);
-  setStatus(ok ? "Share URL copied." : "Share URL created (copy manually from address bar).");
+  setStatus(ok ? "Share URL copied." : "Share URL created.");
 });
 
-btnExample?.addEventListener("click", loadExample);
+btnExample.addEventListener("click", loadExample);
 
-// On load
+btnReset.addEventListener("click", () => {
+  // type="reset" will clear inputs; this clears share state + status
+  window.location.hash = "";
+  setStatus("");
+  requestAnimationFrame(render);
+});
+
 if (!tryLoadFromHash()) loadExample();
 render();
